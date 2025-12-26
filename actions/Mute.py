@@ -44,7 +44,6 @@ class Mute(AudioCore):
 
             # Silently skip if device unavailable
             if device is None:
-                log.debug(f"Mute: Device {self.selected_device.pulse_name} not available")
                 return
 
             self.mute(device)
@@ -56,7 +55,6 @@ class Mute(AudioCore):
 
     def update_mute_image(self):
         if self.selected_device is None:
-            log.debug("Cannot update mute image: no device selected")
             self.is_muted = False
             self.set_current_icon()
             return
@@ -67,7 +65,6 @@ class Mute(AudioCore):
 
                 # If device unavailable, show as unmuted
                 if device is None:
-                    log.debug(f"Mute: Device {self.selected_device.pulse_name} not available for mute check")
                     self.is_muted = False
                 else:
                     self.is_muted = bool(device.mute)

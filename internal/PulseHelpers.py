@@ -89,7 +89,6 @@ def get_device(filter: DeviceFilter, pulse_device_name):
 
             # Validate that we got the correct device, not a fallback
             if not validate_device(device, pulse_device_name):
-                log.debug(f"Device not available: {pulse_device_name}")
                 return None
 
             return device
@@ -118,7 +117,6 @@ def get_volumes_from_device(device_filter: DeviceFilter, pulse_device_name: str)
 def change_volume(device, adjust):
     # Silently skip if device is None/unavailable
     if device is None:
-        log.debug(f"Cannot change volume: device unavailable")
         return
 
     with pulsectl.Pulse("change-volume") as pulse:
@@ -133,7 +131,6 @@ def set_default_device(device_filter: DeviceFilter, pulse_device_name: str):
 
         # Silently skip if device not available
         if device is None:
-            log.debug(f"Cannot set default device: {pulse_device_name} unavailable")
             return
 
         with pulsectl.Pulse("device-setter") as pulse:
@@ -147,7 +144,6 @@ def set_default_device(device_filter: DeviceFilter, pulse_device_name: str):
 def set_volume(device, volume):
     # Silently skip if device is None/unavailable
     if device is None:
-        log.debug(f"Cannot set volume: device unavailable")
         return
 
     with pulsectl.Pulse("change-volume") as pulse:
@@ -159,7 +155,6 @@ def set_volume(device, volume):
 def mute(device, state):
     # Silently skip if device is None/unavailable
     if device is None:
-        log.debug(f"Cannot mute: device unavailable")
         return
 
     with pulsectl.Pulse("change-volume") as pulse:

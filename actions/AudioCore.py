@@ -218,12 +218,9 @@ class AudioCore(ActionCore):
 
         # Get the configured device pulse_name from settings
         configured_pulse_name = self.device_combo_row.get_value()
-        log.debug(f"AudioCore.load_devices: Configured device = {configured_pulse_name}")
-        log.debug(f"AudioCore.load_devices: Available devices = {[d.pulse_name for d in self.loaded_devices]}")
 
         # Check if configured device is in the available list
         device_available = any(d.pulse_name == configured_pulse_name for d in self.loaded_devices)
-        log.debug(f"AudioCore.load_devices: Configured device available = {device_available}")
 
         # If configured device is not available, create a placeholder Device object for it
         if configured_pulse_name and not device_available:
@@ -231,19 +228,9 @@ class AudioCore(ActionCore):
             saved_device_name = self.device_name_entry.get_value()
 
             if saved_device_name:
-                # Clean up any existing "(Unavailable)" suffixes (in case of old duplicate values)
-                clean_name = saved_device_name.replace(" (Unavailable)", "").strip()
-
-                # If we cleaned up a dirty value, save the clean version back to settings
-                if clean_name != saved_device_name:
-                    self.device_name_entry.set_value(clean_name)
-                    log.info(f"AudioCore.load_devices: Cleaned up saved device name from '{saved_device_name}' to '{clean_name}'")
-
-                display_name = f"{clean_name} (Unavailable)"
-                log.info(f"AudioCore.load_devices: Configured device '{configured_pulse_name}' not available, creating placeholder with saved name '{clean_name}'")
+                display_name = f"{saved_device_name} (Unavailable)"
             else:
                 display_name = f"{configured_pulse_name} (Unavailable)"
-                log.info(f"AudioCore.load_devices: Configured device '{configured_pulse_name}' not available, creating placeholder (no saved name)")
 
             # Create a Device object for the unavailable device
             placeholder_device = Device(
@@ -269,14 +256,12 @@ class AudioCore(ActionCore):
         self.load_devices()
 
     def device_changed(self, widget, value, old):
-        log.debug(f"AudioCore.device_changed: old={old.pulse_name if old else None}, new={value.pulse_name if value else None}")
         self.selected_device = value
 
         # Save the human-readable device name for display when device is unavailable
         # Only save when it's a real device (not a placeholder with pulse_index == -1)
         if value and value.device_name and value.pulse_index != -1:
             self.device_name_entry.set_value(value.device_name)
-            log.debug(f"AudioCore.device_changed: Saved device display name: {value.device_name}")
 
         self.display_device_name()
         self.display_device_info()
@@ -310,13 +295,7 @@ class AudioCore(ActionCore):
         if self.device_nick and self.device_nick != "":
             self.set_top_label(self.device_nick)
         else:
-            # For unavailable devices, show a cleaner name
-            if self.selected_device.pulse_index == -1:
-                # Device is unavailable (placeholder)
-                log.debug(f"AudioCore.display_device_name: Device unavailable, showing placeholder name")
-                self.set_top_label(self.selected_device.device_name)
-            else:
-                self.set_top_label(self.selected_device.device_name)
+            self.set_top_label(self.selected_device.device_name)
 
     def display_device_info(self):
         if not self.show_info_content:
@@ -339,8 +318,6 @@ class AudioCore(ActionCore):
         if len(volumes) > 0:
             return str(int(volumes[0]))
 
-        # Return "N/A" when device is unavailable instead of showing default device's volume
-        log.debug(f"Device {self.selected_device.pulse_name} volume unavailable")
         return "N/A"
 
     def display_adjustment(self):
@@ -368,10 +345,8 @@ class AudioCore(ActionCore):
         # This ensures that unavailable devices become available when plugged in
         if hasattr(event, 't'):
             event_type = event.t
-            log.debug(f"AudioCore.on_pulse_device_change: event type={event_type}, facility={event.facility if hasattr(event, 'facility') else 'unknown'}, index={event.index}")
 
             if event_type in ['new', 'remove']:
-                log.info(f"AudioCore.on_pulse_device_change: Device {event_type} event, reloading device list")
                 self.load_devices()
                 return
 

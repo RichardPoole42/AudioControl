@@ -146,7 +146,6 @@ class VolumeWarning(AudioCore):
 
         # If device unavailable, show default color
         if len(volumes) == 0:
-            log.debug(f"VolumeWarning: Cannot get volumes for {self.selected_device.pulse_name}")
             self.set_background_color(list(self.default_color))
             return
 

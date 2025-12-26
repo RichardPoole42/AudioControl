@@ -50,7 +50,6 @@ class SetDefaultDevice(AudioCore):
 
             # Silently skip if device unavailable
             if device is None:
-                log.debug(f"SetDefaultDevice: Device {self.selected_device.pulse_name} not available")
                 return
 
             set_default_device(self.device_filter, self.selected_device.pulse_name)

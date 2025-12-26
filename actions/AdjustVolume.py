@@ -92,7 +92,6 @@ class AdjustVolume(AudioCore):
 
             # Silently skip if device unavailable
             if device is None:
-                log.debug(f"AdjustVolume: Device {self.selected_device.pulse_name} not available")
                 return
 
             if adjustment < 0:
