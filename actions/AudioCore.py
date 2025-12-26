@@ -206,7 +206,28 @@ class AudioCore(ActionCore):
             log.error(f"Error while populating device list: {e}")
             return
 
-        self.device_combo_row.populate(self.loaded_devices, self.device_combo_row.get_value())
+        # Get the configured device pulse_name from settings
+        configured_pulse_name = self.device_combo_row.get_value()
+        log.debug(f"AudioCore.load_devices: Configured device = {configured_pulse_name}")
+        log.debug(f"AudioCore.load_devices: Available devices = {[d.pulse_name for d in self.loaded_devices]}")
+
+        # Check if configured device is in the available list
+        device_available = any(d.pulse_name == configured_pulse_name for d in self.loaded_devices)
+        log.debug(f"AudioCore.load_devices: Configured device available = {device_available}")
+
+        # If configured device is not available, create a placeholder Device object for it
+        if configured_pulse_name and not device_available:
+            log.info(f"AudioCore.load_devices: Configured device '{configured_pulse_name}' not available, creating placeholder")
+            # Create a Device object for the unavailable device
+            placeholder_device = Device(
+                pulse_name=configured_pulse_name,
+                pulse_index=-1,  # Invalid index indicates unavailable
+                device_name=f"{configured_pulse_name} (Unavailable)"
+            )
+            # Add it to loaded_devices so it can be selected
+            self.loaded_devices.insert(0, placeholder_device)
+
+        self.device_combo_row.populate(self.loaded_devices, configured_pulse_name)
         self.display_device_info()
 
     # UI Events
@@ -221,6 +242,7 @@ class AudioCore(ActionCore):
         self.load_devices()
 
     def device_changed(self, widget, value, old):
+        log.debug(f"AudioCore.device_changed: old={old.pulse_name if old else None}, new={value.pulse_name if value else None}")
         self.selected_device = value
 
         self.display_device_name()
@@ -255,7 +277,13 @@ class AudioCore(ActionCore):
         if self.device_nick and self.device_nick != "":
             self.set_top_label(self.device_nick)
         else:
-            self.set_top_label(self.selected_device.device_name)
+            # For unavailable devices, show a cleaner name
+            if self.selected_device.pulse_index == -1:
+                # Device is unavailable (placeholder)
+                log.debug(f"AudioCore.display_device_name: Device unavailable, showing placeholder name")
+                self.set_top_label(self.selected_device.device_name)
+            else:
+                self.set_top_label(self.selected_device.device_name)
 
     def display_device_info(self):
         if not self.show_info_content:
@@ -298,10 +326,25 @@ class AudioCore(ActionCore):
         self.display_icon()
 
     async def on_pulse_device_change(self, *args, **kwargs):
-        if len(args) < 2 or self.selected_device is None:
+        if len(args) < 2:
             return
 
         event = args[1]
+
+        # Reload devices when a new device is added or removed
+        # This ensures that unavailable devices become available when plugged in
+        if hasattr(event, 't'):
+            event_type = event.t
+            log.debug(f"AudioCore.on_pulse_device_change: event type={event_type}, facility={event.facility if hasattr(event, 'facility') else 'unknown'}, index={event.index}")
+
+            if event_type in ['new', 'remove']:
+                log.info(f"AudioCore.on_pulse_device_change: Device {event_type} event, reloading device list")
+                self.load_devices()
+                return
+
+        if self.selected_device is None:
+            return
+
         index = self.selected_device.pulse_index
 
         if event.index == index:
