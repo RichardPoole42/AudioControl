@@ -90,6 +90,11 @@ class AdjustVolume(AudioCore):
         try:
             device = get_device(self.device_filter, self.selected_device.pulse_name)
 
+            # Silently skip if device unavailable
+            if device is None:
+                log.debug(f"AdjustVolume: Device {self.selected_device.pulse_name} not available")
+                return
+
             if adjustment < 0:
                 change_volume(device, adjustment)
                 return

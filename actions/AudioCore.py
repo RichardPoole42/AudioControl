@@ -277,6 +277,9 @@ class AudioCore(ActionCore):
 
         if len(volumes) > 0:
             return str(int(volumes[0]))
+
+        # Return "N/A" when device is unavailable instead of showing default device's volume
+        log.debug(f"Device {self.selected_device.pulse_name} volume unavailable")
         return "N/A"
 
     def display_adjustment(self):

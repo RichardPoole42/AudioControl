@@ -74,6 +74,12 @@ class SetVolume(AudioCore):
 
         try:
             device = get_device(self.device_filter, self.selected_device.pulse_name)
+
+            # Silently skip if device unavailable
+            if device is None:
+                log.debug(f"SetVolume: Device {self.selected_device.pulse_name} not available")
+                return
+
             set_volume(device, self.volume)
         except Exception as e:
             log.error(e)

@@ -46,6 +46,13 @@ class SetDefaultDevice(AudioCore):
             return
 
         try:
+            device = get_device(self.device_filter, self.selected_device.pulse_name)
+
+            # Silently skip if device unavailable
+            if device is None:
+                log.debug(f"SetDefaultDevice: Device {self.selected_device.pulse_name} not available")
+                return
+
             set_default_device(self.device_filter, self.selected_device.pulse_name)
             self.display_device_info()
             self.set_current_icon()
@@ -58,7 +65,11 @@ class SetDefaultDevice(AudioCore):
     def set_current_icon(self):
         standard_device = get_standard_device(self.device_filter)
 
-        if standard_device.name == self.selected_device.pulse_name:
+        # Handle unavailable devices gracefully
+        if standard_device is None or self.selected_device is None:
+            self._current_icon = self.get_icon(Icons.NONE_DEFAULT)
+            self._icon_name = Icons.NONE_DEFAULT
+        elif standard_device.name == self.selected_device.pulse_name:
             self._current_icon = self.get_icon(Icons.HEADPHONE_DEFAULT)
             self._icon_name = Icons.HEADPHONE_DEFAULT
         else:
@@ -69,6 +80,9 @@ class SetDefaultDevice(AudioCore):
 
     def display_adjustment(self):
         standard_device = get_standard_device(self.device_filter)
+
+        if standard_device is None or self.selected_device is None:
+            return ""
 
         if standard_device.name == self.selected_device.pulse_name:
             return "SELECTED"
