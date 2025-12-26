@@ -217,12 +217,21 @@ class AudioCore(ActionCore):
 
         # If configured device is not available, create a placeholder Device object for it
         if configured_pulse_name and not device_available:
-            log.info(f"AudioCore.load_devices: Configured device '{configured_pulse_name}' not available, creating placeholder")
+            # Retrieve the saved human-readable device name
+            saved_device_name = self.get_settings_value("pulse-device-name")
+
+            if saved_device_name:
+                display_name = f"{saved_device_name} (Unavailable)"
+                log.info(f"AudioCore.load_devices: Configured device '{configured_pulse_name}' not available, creating placeholder with saved name '{saved_device_name}'")
+            else:
+                display_name = f"{configured_pulse_name} (Unavailable)"
+                log.info(f"AudioCore.load_devices: Configured device '{configured_pulse_name}' not available, creating placeholder (no saved name)")
+
             # Create a Device object for the unavailable device
             placeholder_device = Device(
                 pulse_name=configured_pulse_name,
                 pulse_index=-1,  # Invalid index indicates unavailable
-                device_name=f"{configured_pulse_name} (Unavailable)"
+                device_name=display_name
             )
             # Add it to loaded_devices so it can be selected
             self.loaded_devices.insert(0, placeholder_device)
@@ -244,6 +253,11 @@ class AudioCore(ActionCore):
     def device_changed(self, widget, value, old):
         log.debug(f"AudioCore.device_changed: old={old.pulse_name if old else None}, new={value.pulse_name if value else None}")
         self.selected_device = value
+
+        # Save the human-readable device name for display when device is unavailable
+        if value and value.device_name:
+            self.set_settings_value("pulse-device-name", value.device_name)
+            log.debug(f"AudioCore.device_changed: Saved device display name: {value.device_name}")
 
         self.display_device_name()
         self.display_device_info()
