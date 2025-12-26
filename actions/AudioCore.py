@@ -231,8 +231,16 @@ class AudioCore(ActionCore):
             saved_device_name = self.device_name_entry.get_value()
 
             if saved_device_name:
-                display_name = f"{saved_device_name} (Unavailable)"
-                log.info(f"AudioCore.load_devices: Configured device '{configured_pulse_name}' not available, creating placeholder with saved name '{saved_device_name}'")
+                # Clean up any existing "(Unavailable)" suffixes (in case of old duplicate values)
+                clean_name = saved_device_name.replace(" (Unavailable)", "").strip()
+
+                # If we cleaned up a dirty value, save the clean version back to settings
+                if clean_name != saved_device_name:
+                    self.device_name_entry.set_value(clean_name)
+                    log.info(f"AudioCore.load_devices: Cleaned up saved device name from '{saved_device_name}' to '{clean_name}'")
+
+                display_name = f"{clean_name} (Unavailable)"
+                log.info(f"AudioCore.load_devices: Configured device '{configured_pulse_name}' not available, creating placeholder with saved name '{clean_name}'")
             else:
                 display_name = f"{configured_pulse_name} (Unavailable)"
                 log.info(f"AudioCore.load_devices: Configured device '{configured_pulse_name}' not available, creating placeholder (no saved name)")
@@ -265,7 +273,8 @@ class AudioCore(ActionCore):
         self.selected_device = value
 
         # Save the human-readable device name for display when device is unavailable
-        if value and value.device_name:
+        # Only save when it's a real device (not a placeholder with pulse_index == -1)
+        if value and value.device_name and value.pulse_index != -1:
             self.device_name_entry.set_value(value.device_name)
             log.debug(f"AudioCore.device_changed: Saved device display name: {value.device_name}")
 
