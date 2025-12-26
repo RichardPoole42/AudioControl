@@ -104,9 +104,19 @@ class AudioCore(ActionCore):
             on_change=self.device_changed
         )
 
+        # Hidden entry to store human-readable device name
+        self.device_name_entry = EntryRow(
+            action_core=self,
+            var_name="pulse-device-name",
+            default_value="",
+            title="Device Name (Hidden)",
+            complex_var_name=False
+        )
+
         self.device_expander.add_row(self.standard_device_switch.widget)
         self.device_expander.add_row(self.device_filter_combo_row.widget)
         self.device_expander.add_row(self.device_combo_row.widget)
+        # Don't add device_name_entry to UI - it's just for storage
 
         # Use Standard Device Toggle/Switch
 
@@ -218,7 +228,7 @@ class AudioCore(ActionCore):
         # If configured device is not available, create a placeholder Device object for it
         if configured_pulse_name and not device_available:
             # Retrieve the saved human-readable device name
-            saved_device_name = self.get_settings_value("pulse-device-name")
+            saved_device_name = self.device_name_entry.get_value()
 
             if saved_device_name:
                 display_name = f"{saved_device_name} (Unavailable)"
@@ -256,7 +266,7 @@ class AudioCore(ActionCore):
 
         # Save the human-readable device name for display when device is unavailable
         if value and value.device_name:
-            self.set_settings_value("pulse-device-name", value.device_name)
+            self.device_name_entry.set_value(value.device_name)
             log.debug(f"AudioCore.device_changed: Saved device display name: {value.device_name}")
 
         self.display_device_name()
